@@ -19,9 +19,31 @@ def validate_input(user_input: str) -> Tuple[bool, List[str]]:
     words = []  # This is supposed to look something like this ["$asdf", "*", "(", "2", "+", "4", ")"]
     curr_word = ""
 
-    user_input = user_input.replace(" ", "")
+    def append_curr_word():
+        nonlocal curr_word
+        if curr_word != "":
+            words.append(curr_word)
+            curr_word = ""
 
     for index, char in enumerate(user_input):
+        if char == " ":
+            continue
+
+        # If the variable indicator '$' has been typed and the next character is not alphanumeric
+        if started_var == True and char.isalnum() == False:
+            # If $ was the only character typed, we expected another character
+            if len(curr_word) == 1:
+                return False, f"Unexpected character '{char}' at index {index}. Expected alphanumeric character after '$'."
+            # If there were other characters typed, that means the variable call has ended
+            else:
+                started_var = False
+
+        if started_var == False or (started_var == True and char.isalnum() == False):
+            append_curr_word()
+
+        if char in ["$", "("] and saw_operator == False:
+            words.append("*")
+
         if char.isalnum():
             saw_operator = False
             if started_var == False and char.isnumeric() == False:
@@ -29,25 +51,15 @@ def validate_input(user_input: str) -> Tuple[bool, List[str]]:
             curr_word += char
 
         elif char in ["+", "*", "-", "/"]:
+            # If we have already seen an operator
+            if saw_operator == True:
+                return False, f"Unexpected operator '{char}' at index {index}!"
+
             saw_operator = True
-            if curr_word != "":
-                words.append(curr_word)
-                curr_word = ""
             words.append(char)
 
         elif char in ["(", ")"]:
-            # The variable declaration has finished
-            started_var = False
-            if curr_word != "":
-                words.append(curr_word)
-                curr_word = ""
-
-            if char == "(":
-                bracket_num += 1
-                if saw_operator == False:
-                    words.append("*")
-            else:
-                bracket_num -= 1
+            bracket_num = bracket_num + (1 if char == "(" else -1)
 
             words.append(char)
 
@@ -55,19 +67,14 @@ def validate_input(user_input: str) -> Tuple[bool, List[str]]:
                 return False, f"Unexpected character ')' at index {index}!", []
 
         elif char == "$":
-
-            if curr_word != "":
-                words.append(curr_word)
-                curr_word = ""
-
-            if saw_operator == False:
-                words.append("*")
-
             started_var = True
-            saw_operator = False
             curr_word += char
         else:
             return False, f"Unexpected character '{char}' at index {index}!", []
+
+        # If the character we saw was not an operator, update the variables
+        if char not in ["+", "*", "-", "/"]:
+            saw_operator = False
 
     if curr_word != "":
         words.append(curr_word)

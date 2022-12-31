@@ -19,17 +19,10 @@ def validate_input(user_input: str) -> Tuple[bool, List[str]]:
     words = []  # This is supposed to look something like this ["$asdf", "*", "(", "2", "+", "4", ")"]
     curr_word = ""
 
+    user_input = user_input.replace(" ", "")
+
     for index, char in enumerate(user_input):
-        if char == " ":
-            # The variable declaration has finished
-            started_var = False
-
-            # Append the current word
-            if curr_word != "":
-                words.append(curr_word)
-                curr_word = ""
-
-        elif char.isalnum():
+        if char.isalnum():
             saw_operator = False
             if started_var == False and char.isnumeric() == False:
                 return False, f"Unexpected character '{char}' at index {index}. If you wanted to use a variable, please remember to use the '$' at the start.", []

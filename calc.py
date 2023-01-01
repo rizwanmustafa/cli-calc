@@ -38,7 +38,7 @@ def validate_input(user_input: str) -> Tuple[bool, List[str]]:
             else:
                 started_var = False
 
-        if started_var == False or (started_var == True and char.isalnum() == False):
+        if (started_var == False and char.isnumeric() == False) or (started_var == True and char.isalnum() == False):
             append_curr_word()
 
         if char in ["$", "("] and saw_operator == False:

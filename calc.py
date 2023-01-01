@@ -4,6 +4,8 @@ from sys import stderr
 vars = dict()
 
 # TODO: Ensure that there are numbers before and after the expression
+# TODO: Fix problems with the following expression: 2 + 2($asdf)
+
 
 
 def take_input():
@@ -21,7 +23,7 @@ def validate_input(user_input: str) -> Tuple[bool, List[str]]:
     bracket_num = 0
     started_var = False
     saw_operator = False
-    words = []  # This is supposed to look something like this ["$asdf", "*", "(", "2", "+", "4", ")"]
+    words: List[str] = []  # This is supposed to look something like this ["$asdf", "*", "(", "2", "+", "4", ")"]
     curr_word = ""
 
     def append_curr_word():
@@ -59,6 +61,12 @@ def validate_input(user_input: str) -> Tuple[bool, List[str]]:
             # If we have already seen an operator
             if saw_operator == True:
                 return False, f"Unexpected operator '{char}' at index {index}!"
+
+            # If there is not a number or variable before operator
+            # TODO: Figure out how to fix cases like 2(-2). How to change the polarity of the next number
+            # Currently we could just append the operator to curr_word if it is either - or +. But we need to make sure that the next thing is a number or a variable
+            if len(words) == 0 or words[-1].isalnum() == False:
+                return False, f"Expected something before operator at index {index}"
 
             saw_operator = True
             words.append(char)
@@ -184,13 +192,11 @@ def replace_vars(words: List[str]) -> List[str]:
     global vars
     for index, value in enumerate(words):
         if "$" in value:
-            words[index] = vars.get(value, "1")  # TODO: Remove this replace with 1 and instead raise an error
+            var_name = words[index][words[index].index("$"):]
+            words[index] =  words[index].replace(var_name, vars.get(value, "1"))  # TODO: Remove this replace with 1 and instead raise an error
 
     return words
 
-
-arr = ["2", "(", "2", "*", "(", "2", "+", "2", ")", ")"]
-print("".join(arr))
 
 while True:
 

@@ -6,12 +6,16 @@ vars = dict()
 # TODO: Ensure that there are numbers before and after the expression
 # TODO: Fix problems with the following expression: 2 + 2($asdf)
 
+def is_var_or_alnum(s : str)-> bool:
+    for i in s:
+        if (i.isalnum() or i == "$") == False:
+            return False
 
+    return True
 
 def take_input():
     user_input = input(">>> ")
     return user_input
-
 
 def validate_input(user_input: str) -> Tuple[bool, List[str]]:
     # This methods makes sure that only valid characters are in the user input
@@ -48,7 +52,7 @@ def validate_input(user_input: str) -> Tuple[bool, List[str]]:
         if (started_var == False and char.isnumeric() == False) or (started_var == True and char.isalnum() == False):
             append_curr_word()
 
-        if char in ["$", "("] and saw_operator == False:
+        if char in ["$", "("] and saw_operator == False and len(words) != 0 and words[-1] != "(":
             words.append("*")
 
         if char.isalnum():
@@ -65,7 +69,7 @@ def validate_input(user_input: str) -> Tuple[bool, List[str]]:
             # If there is not a number or variable before operator
             # TODO: Figure out how to fix cases like 2(-2). How to change the polarity of the next number
             # Currently we could just append the operator to curr_word if it is either - or +. But we need to make sure that the next thing is a number or a variable
-            if len(words) == 0 or words[-1].isalnum() == False:
+            if len(words) == 0 or is_var_or_alnum(words[-1]) == False: #TODO: Fix the edge case of $asdf
                 return False, f"Expected something before operator at index {index}"
 
             saw_operator = True

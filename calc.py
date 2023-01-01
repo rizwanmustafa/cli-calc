@@ -1,4 +1,9 @@
 from typing import Tuple, List, Dict
+from sys import stderr
+
+vars = dict()
+
+# TODO: Ensure that there are numbers before and after the expression
 
 
 def take_input():
@@ -47,7 +52,7 @@ def validate_input(user_input: str) -> Tuple[bool, List[str]]:
         if char.isalnum():
             saw_operator = False
             if started_var == False and char.isnumeric() == False:
-                return False, f"Unexpected character '{char}' at index {index}. If you wanted to use a variable, please remember to use the '$' at the start.", []
+                return False, f"Unexpected character '{char}' at index {index}. If you wanted to use a variable, please remember to use the '$' at the start."
             curr_word += char
 
         elif char in ["+", "*", "-", "/"]:
@@ -64,13 +69,13 @@ def validate_input(user_input: str) -> Tuple[bool, List[str]]:
             words.append(char)
 
             if bracket_num < 0:
-                return False, f"Unexpected character ')' at index {index}!", []
+                return False, f"Unexpected character ')' at index {index}!"
 
         elif char == "$":
             started_var = True
             curr_word += char
         else:
-            return False, f"Unexpected character '{char}' at index {index}!", []
+            return False, f"Unexpected character '{char}' at index {index}!"
 
         # If the character we saw was not an operator, update the variables
         if char not in ["+", "*", "-", "/"]:
@@ -80,23 +85,125 @@ def validate_input(user_input: str) -> Tuple[bool, List[str]]:
         words.append(curr_word)
 
     if bracket_num != 0:
-        return False, "Could not find matching ')'", []
+        return False, "Could not find matching ')'"
 
     if saw_operator == True:
-        return False, "Expected operand after operator!", []
+        return False, "Expected operand after operator!"
 
     return True, words
 
 
-def process_query(processed_input: List[str], var_dict: Dict[str, int]) -> int:
+def get_ending_bracket_index(iterable, br_index: int) -> int | None:
+    if iterable[br_index] != "(":
+        raise ValueError(f"Invalid br_index value! The character is '{iterable[br_index]}' but expected '('")
 
-    pass
+    bracket_num = 0
 
+    for index, value in enumerate(iterable[br_index:]):
+        if value == "(":
+            bracket_num += 1
+        elif value == ")":
+            bracket_num -= 1
+        else:
+            continue
+        if bracket_num == 0:
+            return index + br_index
+
+    return None
+
+
+def replace_array_values_with_value(array: List, start_index: int, end_index: int, value: any):
+    for _ in range(end_index - start_index + 1):
+        array.pop(start_index)
+
+    array.insert(start_index, value)
+    print(array)
+
+    return array
+
+
+def process_query(expression: List[str]) -> float:
+    if len(expression) == 1:  # If there is only a number left, return it
+        num = float(expression[0])
+        return (int(num) if num.is_integer() else num)
+
+    # If there are brackets in the expression, deal with them
+    if "(" in expression:
+        # Get their indexes
+        br_start_index = expression.index("(")
+        br_end_index = get_ending_bracket_index(expression, br_start_index)
+
+        # Get the sub expression inside them
+        sub_array = expression[br_start_index + 1: br_end_index]
+
+        print(sub_array)  # TODO: Remove this debug print
+        expression_ans = process_query(sub_array)
+
+        expression = replace_array_values_with_value(expression, br_start_index, br_end_index, expression_ans)
+
+    elif "/" in expression:
+        operator_index = expression.index("/")
+
+        first_operand = float(expression[operator_index - 1])
+        second_operand = float(expression[operator_index + 1])
+        answer = first_operand / second_operand
+
+        expression = replace_array_values_with_value(expression, operator_index - 1, operator_index + 1, answer)
+
+    elif "*" in expression:
+        operator_index = expression.index("*")
+
+        first_operand = float(expression[operator_index - 1])
+        second_operand = float(expression[operator_index + 1])
+        answer = first_operand * second_operand
+
+        expression = replace_array_values_with_value(expression, operator_index - 1, operator_index + 1, answer)
+
+    elif "+" in expression:
+        operator_index = expression.index("+")
+
+        first_operand = float(expression[operator_index - 1])
+        second_operand = float(expression[operator_index + 1])
+        answer = first_operand + second_operand
+
+        expression = replace_array_values_with_value(expression, operator_index - 1, operator_index + 1, answer)
+
+    elif "-" in expression:
+        operator_index = expression.index("-")
+
+        first_operand = float(expression[operator_index - 1])
+        second_operand = float(expression[operator_index + 1])
+        answer = first_operand - second_operand
+
+        expression = replace_array_values_with_value(expression, operator_index - 1, operator_index + 1, answer)
+
+    return process_query(expression)
+
+
+def replace_vars(words: List[str]) -> List[str]:
+    global vars
+    for index, value in enumerate(words):
+        if "$" in value:
+            words[index] = vars.get(value, "1")  # TODO: Remove this replace with 1 and instead raise an error
+
+    return words
+
+
+arr = ["2", "(", "2", "*", "(", "2", "+", "2", ")", ")"]
+print("".join(arr))
 
 while True:
+
     user_input = take_input()
 
     if user_input.strip() == "exit":
         break
 
-    print(validate_input(user_input))
+    inputValid, words = validate_input(user_input)
+
+    if inputValid:
+        words = replace_vars(words)
+        print(words)
+        print(process_query(words))
+    else:
+        print(words, file=stderr)

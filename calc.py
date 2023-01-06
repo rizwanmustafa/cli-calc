@@ -206,8 +206,12 @@ while True:
 
     user_input = take_input()
 
-    if user_input.strip() == "exit":
+    stripped_input = user_input.strip()
+
+    if stripped_input == "exit":
         break
+
+    if stripped_input == "": continue
 
     inputValid, words = validate_input(user_input)
 

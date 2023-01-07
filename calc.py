@@ -244,7 +244,7 @@ def replace_vars(words: List[str]) -> List[str]:
     for index, value in enumerate(words):
         if "$" in value:
             var_name = words[index][words[index].index("$"):]
-            words[index] = words[index].replace(var_name, vars.get(value, "1"))  # TODO: Remove this replace with 1 and instead raise an error
+            words[index] = words[index].replace(var_name, str(vars.get(value, "1")))  # Replacing with 1 will be the default behaviour for undefined vars
 
     return words
 

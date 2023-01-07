@@ -1,23 +1,70 @@
-from typing import Tuple, List, Dict
+from typing import Tuple, List
 from sys import stderr
 
 vars = dict()
 
-# TODO: Ensure that there are numbers before and after the expression
-# TODO: Fix problems with the following expression: 2 + 2($asdf)
+# TODO: Implement negative numbers
+# TODO: Implement decimal numbers
 
-def is_var_or_alnum(s : str)-> bool:
+
+def is_var_or_alnum(s: str) -> bool:
     for i in s:
         if (i.isalnum() or i == "$") == False:
             return False
 
     return True
 
+
 def take_input():
     user_input = input(">>> ")
     return user_input
 
-def validate_input(user_input: str) -> Tuple[bool, List[str]]:
+
+def validate_var_assignment(user_input: str) -> Tuple[bool, List[str]]:
+
+    eq_num = user_input.count("=")
+
+    if eq_num > 1:
+        return False, "More than one '=' in the assignment statement!"
+    elif eq_num < 1:
+        raise ValueError("Expected '=' in the statement!")
+
+    if user_input.strip()[0] == "=":  # There is no variable. It starts with an '='
+        return False, "There is no left side of this assignment statement!"
+
+    if user_input.strip()[-1] == "=":  # There is no calculation. It ends with an '='
+        return False, "There is no right side of this assignment statement!"
+
+    var_side, calc_side = user_input.strip().split("=")
+
+    var_side = var_side.strip()
+    calc_side = calc_side.strip()
+
+    # Make sure the var_side is valid
+    if " " in var_side:
+        return False, "The left side of the assignment statement is messed up! It has an unexpected space which should have been stripped out!"  # TODO: Change the error message
+
+    if var_side[0] != "$":
+        return False, "Expected an variable identifier on the left side but found none!"
+
+    for char in var_side[1:]:
+        if char.isalnum() == False:
+            return False, "Invalid character {char} on the left side of the equation!"
+
+    # Make sure the calc_side is vaid
+    calc_side_is_valid, errors = validate_calculation(calc_side)
+
+    if calc_side_is_valid == False:
+        return calc_side_is_valid, errors
+
+    final_answer = process_query(replace_vars(errors))
+
+    vars[var_side] = str(final_answer)
+
+    return True
+
+
+def validate_calculation(user_input: str) -> Tuple[bool, List[str] | str]:
     # This methods makes sure that only valid characters are in the user input
     # It also makes sure that the number of brackets are correct
     # The first item tells if the input is valid.
@@ -69,7 +116,7 @@ def validate_input(user_input: str) -> Tuple[bool, List[str]]:
             # If there is not a number or variable before operator
             # TODO: Figure out how to fix cases like 2(-2). How to change the polarity of the next number
             # Currently we could just append the operator to curr_word if it is either - or +. But we need to make sure that the next thing is a number or a variable
-            if len(words) == 0 or is_var_or_alnum(words[-1]) == False: #TODO: Fix the edge case of $asdf
+            if len(words) == 0 or is_var_or_alnum(words[-1]) == False:  # TODO: Fix the edge case of $asdf
                 return False, f"Expected something before operator at index {index}"
 
             saw_operator = True
@@ -197,7 +244,7 @@ def replace_vars(words: List[str]) -> List[str]:
     for index, value in enumerate(words):
         if "$" in value:
             var_name = words[index][words[index].index("$"):]
-            words[index] =  words[index].replace(var_name, vars.get(value, "1"))  # TODO: Remove this replace with 1 and instead raise an error
+            words[index] = words[index].replace(var_name, vars.get(value, "1"))  # TODO: Remove this replace with 1 and instead raise an error
 
     return words
 
@@ -211,13 +258,19 @@ while True:
     if stripped_input == "exit":
         break
 
-    if stripped_input == "": continue
+    if stripped_input == "":
+        continue
 
-    inputValid, words = validate_input(user_input)
-
-    if inputValid:
-        words = replace_vars(words)
-        print(words)
-        print(process_query(words))
+    if "=" in user_input:
+        print(validate_var_assignment(user_input))
+        pass
     else:
-        print(words, file=stderr)
+
+        inputValid, words = validate_calculation(user_input)
+
+        if inputValid:
+            words = replace_vars(words)
+            print(words)
+            print(process_query(words))
+        else:
+            print(words, file=stderr)

@@ -26,7 +26,7 @@ def take_input():
     return user_input
 
 
-def get_highest_operator_index(expression: List[str]) -> int:
+def get_highest_operator_index(expression: List[str]) -> Tuple[str | None, int]:
     # Returns -1 if no operator found
     op_dic = {"/": 0, "*": 1, "+": 2, "-": 3}
     ops = {"/", "*", "+", "-"}

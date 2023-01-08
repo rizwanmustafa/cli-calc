@@ -7,6 +7,8 @@ vars = dict()
 # TODO: Implement decimal numbers
 
 
+# Helper Functions
+
 def is_var_or_alnum(s: str) -> bool:
     for i in s:
         if (i.isalnum() or i == "$") == False:
@@ -20,7 +22,51 @@ def take_input():
     return user_input
 
 
+def replace_array_values_with_value(array: List, start_index: int, end_index: int, value: any):
+    for _ in range(end_index - start_index + 1):
+        array.pop(start_index)
+
+    array.insert(start_index, value)
+    print(array)
+
+    return array
+
+
+def get_ending_bracket_index(iterable, br_index: int) -> int | None:
+    if iterable[br_index] != "(":
+        raise ValueError(f"Invalid br_index value! The character is '{iterable[br_index]}' but expected '('")
+
+    bracket_num = 0
+
+    for index, value in enumerate(iterable[br_index:]):
+        if value == "(":
+            bracket_num += 1
+        elif value == ")":
+            bracket_num -= 1
+        else:
+            continue
+        if bracket_num == 0:
+            return index + br_index
+
+    return None
+
+
+def replace_vars(words: List[str]) -> List[str]:
+    global vars
+    for index, value in enumerate(words):
+        if "$" in value:
+            var_name = words[index][words[index].index("$"):]
+            # Replacing with 1 will be the default behaviour for undefined vars
+            words[index] = words[index].replace(var_name, str(vars.get(value, "1")))
+
+    return words
+
+
+# Functions for validating and processing user input
+
 def validate_var_assignment(user_input: str) -> Tuple[bool, List[str]]:
+    # This method validates the given user input.
+    # It assumes that the user input is an assignment statement
 
     eq_num = user_input.count("=")
 
@@ -65,11 +111,8 @@ def validate_var_assignment(user_input: str) -> Tuple[bool, List[str]]:
 
 
 def validate_calculation(user_input: str) -> Tuple[bool, List[str] | str]:
-    # This methods makes sure that only valid characters are in the user input
-    # It also makes sure that the number of brackets are correct
-    # The first item tells if the input is valid.
-    # If the input is valid, the second item has the list of processed items
-    # If the input is not valid, the second item is an empty array
+    # This method validates the given user input.
+    # It assumes that the user input is an expression that is to be evaulated and NOT an assignment statement
 
     bracket_num = 0
     started_var = False
@@ -152,36 +195,9 @@ def validate_calculation(user_input: str) -> Tuple[bool, List[str] | str]:
     return True, words
 
 
-def get_ending_bracket_index(iterable, br_index: int) -> int | None:
-    if iterable[br_index] != "(":
-        raise ValueError(f"Invalid br_index value! The character is '{iterable[br_index]}' but expected '('")
+def process_query(expression: List[str]) -> float | int:
+    # This functions evaulates the broken down expression and returns a number
 
-    bracket_num = 0
-
-    for index, value in enumerate(iterable[br_index:]):
-        if value == "(":
-            bracket_num += 1
-        elif value == ")":
-            bracket_num -= 1
-        else:
-            continue
-        if bracket_num == 0:
-            return index + br_index
-
-    return None
-
-
-def replace_array_values_with_value(array: List, start_index: int, end_index: int, value: any):
-    for _ in range(end_index - start_index + 1):
-        array.pop(start_index)
-
-    array.insert(start_index, value)
-    print(array)
-
-    return array
-
-
-def process_query(expression: List[str]) -> float:
     if len(expression) == 1:  # If there is only a number left, return it
         num = float(expression[0])
         return (int(num) if num.is_integer() else num)
@@ -238,15 +254,6 @@ def process_query(expression: List[str]) -> float:
 
     return process_query(expression)
 
-
-def replace_vars(words: List[str]) -> List[str]:
-    global vars
-    for index, value in enumerate(words):
-        if "$" in value:
-            var_name = words[index][words[index].index("$"):]
-            words[index] = words[index].replace(var_name, str(vars.get(value, "1")))  # Replacing with 1 will be the default behaviour for undefined vars
-
-    return words
 
 
 while True:

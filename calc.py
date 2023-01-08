@@ -103,7 +103,7 @@ def replace_vars(words: List[str]) -> List[str]:
 
 # Functions for validating and processing user input
 
-def validate_var_assignment(user_input: str) -> Tuple[bool, List[str]]:
+def validate_assignment(user_input: str) -> Tuple[bool, List[str]]:
     # This method validates the given user input.
     # It assumes that the user input is an assignment statement
 
@@ -136,17 +136,7 @@ def validate_var_assignment(user_input: str) -> Tuple[bool, List[str]]:
         if char.isalnum() == False:
             return False, "Invalid character {char} on the left side of the equation!"
 
-    # Make sure the calc_side is vaid
-    calc_side_is_valid, errors = validate_calculation(calc_side)
-
-    if calc_side_is_valid == False:
-        return calc_side_is_valid, errors
-
-    final_answer = process_query(replace_vars(errors))
-
-    vars[var_side] = str(final_answer)
-
-    return True
+    return True, [var_side, calc_side]
 
 
 def validate_calculation(user_input: str) -> Tuple[bool, List[str] | str]:
@@ -234,7 +224,7 @@ def validate_calculation(user_input: str) -> Tuple[bool, List[str] | str]:
     return True, words
 
 
-def process_query(expression: List[str]) -> float | int:
+def process_calculation(expression: List[str]) -> float | int:
     # This functions evaulates the broken down expression and returns a number
 
     if len(expression) == 1:  # If there is only a number left, return it
@@ -251,7 +241,7 @@ def process_query(expression: List[str]) -> float | int:
         sub_array = expression[br_start_index + 1: br_end_index]
 
         print(sub_array)  # TODO: Remove this debug print
-        expression_ans = process_query(sub_array)
+        expression_ans = process_calculation(sub_array)
 
         expression = replace_array_values_with_value(expression, br_start_index, br_end_index, expression_ans)
     else:
@@ -266,7 +256,7 @@ def process_query(expression: List[str]) -> float | int:
 
         expression = replace_array_values_with_value(expression, operator_index - 1, operator_index + 1, answer)
 
-    return process_query(expression)
+    return process_calculation(expression)
 
 
 if __name__ == "__main__":
@@ -285,13 +275,22 @@ if __name__ == "__main__":
         statement_type = guess_statement_type(stripped_input)
 
         if statement_type == "assignment":
-            print(validate_var_assignment(user_input))
+            inputValid, data = validate_assignment(user_input)
+            if inputValid:
+                var_name, calculation = data
+                calculation_valid, words = validate_calculation(calculation)
+                if calculation_valid:
+                    vars[var_name] = process_calculation(replace_vars(words))
+                else:
+                    print(words, file=stderr)
+            else:
+                print(data, file=stderr)
         else:
             inputValid, words = validate_calculation(user_input)
 
             if inputValid:
                 words = replace_vars(words)
                 print(words)
-                print(process_query(words))
+                print(process_calculation(words))
             else:
                 print(words, file=stderr)

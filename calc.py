@@ -9,6 +9,10 @@ vars = dict()
 
 # Helper Functions
 
+def guess_statement_type(user_input: str) -> str:
+    return "assignment" if "=" in user_input else "expression"
+
+
 def is_var_or_alnum(s: str) -> bool:
     for i in s:
         if (i.isalnum() or i == "$") == False:
@@ -20,6 +24,41 @@ def is_var_or_alnum(s: str) -> bool:
 def take_input():
     user_input = input(">>> ")
     return user_input
+
+
+def get_highest_operator_index(expression: List[str]) -> int:
+    # Returns -1 if no operator found
+    op_dic = {"/": 0, "*": 1, "+": 2, "-": 3}
+    ops = {"/", "*", "+", "-"}
+
+    curr_op, curr_op_index = None, None
+
+    for index, item in enumerate(expression):
+        if item not in ops:
+            continue
+
+        if curr_op == None or op_dic[item] < op_dic[curr_op]:
+            curr_op = item
+            curr_op_index = index
+
+    return (curr_op, curr_op_index) if curr_op_index != None else (None, -1)
+
+
+def calculate(operator: str, arg1: float, arg2: float):
+
+    if operator == "/":
+        return arg1 / arg2
+
+    elif operator == "*":
+        return arg1 * arg2
+
+    elif operator == "+":
+        return arg1 + arg2
+
+    elif operator == "-":
+        return arg1 - arg2
+
+    raise ValueError(f"Expecter operator to be one of / * + - but instead got '{operator}'")
 
 
 def replace_array_values_with_value(array: List, start_index: int, end_index: int, value: any):
@@ -215,69 +254,44 @@ def process_query(expression: List[str]) -> float | int:
         expression_ans = process_query(sub_array)
 
         expression = replace_array_values_with_value(expression, br_start_index, br_end_index, expression_ans)
+    else:
+        operator, operator_index = get_highest_operator_index(expression)
 
-    elif "/" in expression:
-        operator_index = expression.index("/")
+        if operator_index == -1:
+            raise ValueError("Somehow there are no operators left but there are still numbers to process!", expression)
 
-        first_operand = float(expression[operator_index - 1])
-        second_operand = float(expression[operator_index + 1])
-        answer = first_operand / second_operand
+        first_operand, second_operand = float(expression[operator_index - 1]), float(expression[operator_index + 1])
 
-        expression = replace_array_values_with_value(expression, operator_index - 1, operator_index + 1, answer)
-
-    elif "*" in expression:
-        operator_index = expression.index("*")
-
-        first_operand = float(expression[operator_index - 1])
-        second_operand = float(expression[operator_index + 1])
-        answer = first_operand * second_operand
-
-        expression = replace_array_values_with_value(expression, operator_index - 1, operator_index + 1, answer)
-
-    elif "+" in expression:
-        operator_index = expression.index("+")
-
-        first_operand = float(expression[operator_index - 1])
-        second_operand = float(expression[operator_index + 1])
-        answer = first_operand + second_operand
-
-        expression = replace_array_values_with_value(expression, operator_index - 1, operator_index + 1, answer)
-
-    elif "-" in expression:
-        operator_index = expression.index("-")
-
-        first_operand = float(expression[operator_index - 1])
-        second_operand = float(expression[operator_index + 1])
-        answer = first_operand - second_operand
+        answer = calculate(operator, first_operand, second_operand)
 
         expression = replace_array_values_with_value(expression, operator_index - 1, operator_index + 1, answer)
 
     return process_query(expression)
 
 
+if __name__ == "__main__":
+    while True:
 
-while True:
+        user_input = take_input()
 
-    user_input = take_input()
+        if user_input == "exit":
+            break
 
-    stripped_input = user_input.strip()
+        stripped_input = user_input.strip()
 
-    if stripped_input == "exit":
-        break
+        if stripped_input == "":
+            continue
 
-    if stripped_input == "":
-        continue
+        statement_type = guess_statement_type(stripped_input)
 
-    if "=" in user_input:
-        print(validate_var_assignment(user_input))
-        pass
-    else:
-
-        inputValid, words = validate_calculation(user_input)
-
-        if inputValid:
-            words = replace_vars(words)
-            print(words)
-            print(process_query(words))
+        if statement_type == "assignment":
+            print(validate_var_assignment(user_input))
         else:
-            print(words, file=stderr)
+            inputValid, words = validate_calculation(user_input)
+
+            if inputValid:
+                words = replace_vars(words)
+                print(words)
+                print(process_query(words))
+            else:
+                print(words, file=stderr)
